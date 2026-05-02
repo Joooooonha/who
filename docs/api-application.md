@@ -16,6 +16,7 @@
    - 목적: 후보자ID 기준 후보자별 공약 조회
    - 서비스: `ElecPrmsInfoInqireService`
    - 개발계정: 자동승인, 기본 10,000건 트래픽
+   - 후보자 정보 API의 `huboid` 값을 공약 API의 `cnddtid` 파라미터에 넣는다.
 
 ## 신청 사유 예시
 

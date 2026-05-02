@@ -23,6 +23,11 @@
   - `sgId`: `20250603`
   - `sgTypecode`: `1`
   - 목적: 최신 대통령선거 데이터 구조 검증
+- 문서 예시 smoke test
+  - `sgId`: `20231011`
+  - `sgTypecode`: `4`
+  - `cnddtid`: `1000000000`
+  - 목적: 공식 활용 문서 예시값 기준 요청 파라미터 검증
 
 `CommonCodeService` 결과가 위 값과 다르면 API 응답을 우선한다.
 
@@ -36,6 +41,7 @@
    - `huboid`, `name`, `jdName`, `sdName`, `sggName`, `wiwName`, `status` 확인
 3. 후보자별 공약 조회
    - `ElecPrmsInfoInqireService/getCnddtElecPrmsInfoInqire`
+   - 후보자 API의 `huboid` 값을 공약 API의 `cnddtid` 파라미터에 넣는다.
    - `prmsRealmNameN`, `prmsTitleN`, `prmsContN` 확인
 
 ## 실행

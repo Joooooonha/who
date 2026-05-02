@@ -160,7 +160,7 @@ public class NecDataProbe {
 
                 Options:
                   --fixture                 Run with embedded sample data.
-                  --target VALUE            2022-local, 2025-president, all, or custom.
+                  --target VALUE            2022-local, 2025-president, docs-sample, all, or custom.
                   --sgId VALUE              Required for --target custom.
                   --sgTypecode VALUE        Required for --target custom.
                   --sdName VALUE            Optional city/province filter.
@@ -242,11 +242,16 @@ public class NecDataProbe {
                 case "2025-president" -> List.of(
                         new TargetSpec("2025-president", "20250603", "1", "제21대 대통령선거")
                 );
+                case "docs-sample" -> List.of(
+                        new TargetSpec("docs-sample", "20231011", "4", "API documentation sample")
+                );
                 case "all" -> {
                     List<TargetSpec> all = new ArrayList<>();
                     all.addAll(resolve(new Config(config.serviceKey, "2022-local", "", "", config.sdName, config.sggName,
                             config.candidateLimit, config.outputDir, false, false)));
                     all.addAll(resolve(new Config(config.serviceKey, "2025-president", "", "", config.sdName, config.sggName,
+                            config.candidateLimit, config.outputDir, false, false)));
+                    all.addAll(resolve(new Config(config.serviceKey, "docs-sample", "", "", config.sdName, config.sggName,
                             config.candidateLimit, config.outputDir, false, false)));
                     yield all;
                 }
@@ -324,7 +329,7 @@ public class NecDataProbe {
                     result.add(new Candidate(
                             item.getOrDefault("sgId", sgId),
                             item.getOrDefault("sgTypecode", sgTypecode),
-                            firstNonBlank(item.get("huboid"), item.get("cnddtId")),
+                            firstNonBlank(item.get("huboid"), item.get("cnddtid"), item.get("cnddtId")),
                             item.getOrDefault("sdName", ""),
                             item.getOrDefault("sggName", ""),
                             item.getOrDefault("wiwName", ""),
@@ -346,7 +351,7 @@ public class NecDataProbe {
             params.put("numOfRows", "10");
             params.put("sgId", sgId);
             params.put("sgTypecode", sgTypecode);
-            params.put("cnddtId", candidateId);
+            params.put("cnddtid", candidateId);
 
             XmlResponse response = get("/ElecPrmsInfoInqireService/getCnddtElecPrmsInfoInqire", params);
             if (response.isNoData()) {
@@ -365,7 +370,7 @@ public class NecDataProbe {
                             id,
                             item.getOrDefault("sgId", sgId),
                             item.getOrDefault("sgTypecode", sgTypecode),
-                            item.getOrDefault("cnddtId", candidateId),
+                            firstNonBlank(item.get("cnddtid"), item.get("cnddtId"), candidateId),
                             item.getOrDefault("krName", ""),
                             item.getOrDefault("partyName", ""),
                             item.getOrDefault("sidoName", ""),

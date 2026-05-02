@@ -11,6 +11,7 @@ on:
         options:
           - 2022-local
           - 2025-president
+          - docs-sample
           - all
           - custom
       sgId:
