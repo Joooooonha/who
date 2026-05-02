@@ -1,0 +1,58 @@
+name: API Probe
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Probe target
+        required: true
+        default: 2022-local
+        type: choice
+        options:
+          - 2022-local
+          - 2025-president
+          - all
+      sdName:
+        description: Optional city/province filter
+        required: false
+        default: ""
+      sggName:
+        description: Optional district filter
+        required: false
+        default: ""
+      candidateLimit:
+        description: Candidate sample limit
+        required: true
+        default: "30"
+
+jobs:
+  api-probe:
+    name: Run NEC API probe
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Run API probe
+        env:
+          DATA_GO_KR_SERVICE_KEY: ${{ secrets.DATA_GO_KR_SERVICE_KEY }}
+        run: |
+          test -n "$DATA_GO_KR_SERVICE_KEY"
+          java tools/nec-probe/NecDataProbe.java \
+            --target "${{ inputs.target }}" \
+            --sdName "${{ inputs.sdName }}" \
+            --sggName "${{ inputs.sggName }}" \
+            --candidate-limit "${{ inputs.candidateLimit }}"
+
+      - name: Upload probe reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: nec-api-probe-reports
+          path: data/probes
+

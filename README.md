@@ -1,0 +1,58 @@
+# 공약 디코딩 2026
+
+공식 선거 공약 데이터를 기반으로 사용자가 공약을 먼저 평가하고, 응답과 가장 잘 맞는 후보를 "공약 일치도"로 보여주는 MVP입니다.
+
+현재 구현 범위는 2026 데이터가 공개되기 전까지 사용할 **과거 선거 데이터 검증 파이프라인**입니다. API 키가 없어도 fixture 모드로 점수 산식과 리포트 포맷을 검증할 수 있고, 키가 생기면 실제 중앙선거관리위원회 공공데이터 API를 호출합니다.
+
+## Quick Start
+
+Fixture 모드:
+
+```sh
+java tools/nec-probe/NecDataProbe.java --fixture
+```
+
+실제 API 검증:
+
+```sh
+DATA_GO_KR_SERVICE_KEY='발급받은_서비스키' \
+  java tools/nec-probe/NecDataProbe.java --target 2022-local --candidate-limit 30
+```
+
+서울특별시 시도지사/교육감 등 특정 지역 샘플:
+
+```sh
+DATA_GO_KR_SERVICE_KEY='발급받은_서비스키' \
+  java tools/nec-probe/NecDataProbe.java --target 2022-local --sdName 서울특별시 --candidate-limit 30
+```
+
+2025 대통령선거 보조 검증:
+
+```sh
+DATA_GO_KR_SERVICE_KEY='발급받은_서비스키' \
+  java tools/nec-probe/NecDataProbe.java --target 2025-president
+```
+
+결과는 `data/probes/` 아래에 Markdown/JSON 리포트로 저장됩니다.
+
+## API 신청과 배포
+
+- 필요한 공공데이터 API 신청 절차는 [docs/api-application.md](docs/api-application.md)에 정리했습니다.
+- 기능을 작게 만든 뒤 계속 배포하는 CI/CD 방향은 [docs/deployment.md](docs/deployment.md)에 정리했습니다.
+- 현재 CI는 fixture probe를 실행하고 JSON 리포트를 검증합니다.
+- API 키를 GitHub secret `DATA_GO_KR_SERVICE_KEY`로 넣으면 수동 workflow에서 실데이터 probe를 돌릴 수 있습니다.
+- 배포 플랫폼의 deploy hook을 GitHub secret `DEPLOY_HOOK_URL`로 넣으면 `main` CI 성공 후 자동 배포됩니다.
+
+## Data Flow
+
+```text
+CommonCodeService
+→ Candidate API
+→ Candidate pledge API
+→ sample user responses
+→ candidate average score
+→ normalized pledge match ranking
+→ user-only result evidence
+```
+
+자세한 검증 절차는 [docs/data-validation.md](docs/data-validation.md)를 참고하세요.
