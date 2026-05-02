@@ -52,6 +52,8 @@ java tools/nec-probe/NecDataProbe.java --target 2022-local --sdName 서울특별
 java tools/nec-probe/NecDataProbe.java --target 2025-president
 ```
 
+후보자 API에서 `INFO-03 데이터 정보가 없습니다`가 나오면 실패라기보다 해당 `sgId/sgTypecode` 조합에 후보자 데이터가 없다는 뜻일 수 있다. 이때는 `data/probes/common-codes/common-codes.md`에서 실제 제공 중인 선거코드를 확인한 뒤 custom target으로 다시 검증한다.
+
 ## GitHub Secrets
 
 CI/CD에서 실데이터 검증이나 배포를 연결할 때 아래 secrets를 설정한다.
@@ -71,4 +73,3 @@ CI/CD에서 실데이터 검증이나 배포를 연결할 때 아래 secrets를 
 - 선거 종료 후에는 후보자 전체 공약이 아니라 당선인 공약 중심으로 제공될 수 있다.
 - 후보자별 공약 개수가 다를 수 있으므로 서비스 점수는 평균 정규화로 계산한다.
 - 후보자 API에는 생년월일, 성별, 주소, 직업 같은 필드가 포함될 수 있으나 MVP DB와 화면에는 저장/표시하지 않는다.
-

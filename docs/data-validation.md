@@ -60,6 +60,14 @@ DATA_GO_KR_SERVICE_KEY='발급받은_서비스키' \
   java tools/nec-probe/NecDataProbe.java --target 2025-president
 ```
 
+API가 특정 조합에서 `INFO-03 데이터 정보가 없습니다`를 반환하면 `data/probes/common-codes/common-codes.md`를 먼저 확인한다. GitHub Actions에서는 artifact `nec-api-probe-reports` 안에 같은 파일이 포함된다.
+
+문서와 실제 제공 코드가 다르면 custom target으로 재시도한다.
+
+```sh
+java tools/nec-probe/NecDataProbe.java --target custom --sgId 20231011 --sgTypecode 4
+```
+
 특정 시도/선거구 필터:
 
 ```sh
@@ -92,4 +100,3 @@ DATA_GO_KR_SERVICE_KEY='발급받은_서비스키' \
 - 예산/재원 정보는 공식 공약 API 기본 필드가 아니므로 MVP에서는 표시하지 않는다.
 - 후보 사진은 공식 API에서 안정적으로 제공되지 않으므로 MVP에서는 이름/지역 중심으로 표시한다.
 - 2026 데이터가 공개되면 동일 파이프라인에서 `sgId`, `sgTypecode`만 바꿔 재검증한다.
-

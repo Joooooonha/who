@@ -12,6 +12,15 @@ on:
           - 2022-local
           - 2025-president
           - all
+          - custom
+      sgId:
+        description: Required only when target is custom
+        required: false
+        default: ""
+      sgTypecode:
+        description: Required only when target is custom
+        required: false
+        default: ""
       sdName:
         description: Optional city/province filter
         required: false
@@ -46,6 +55,8 @@ jobs:
           test -n "$DATA_GO_KR_SERVICE_KEY"
           java tools/nec-probe/NecDataProbe.java \
             --target "${{ inputs.target }}" \
+            --sgId "${{ inputs.sgId }}" \
+            --sgTypecode "${{ inputs.sgTypecode }}" \
             --sdName "${{ inputs.sdName }}" \
             --sggName "${{ inputs.sggName }}" \
             --candidate-limit "${{ inputs.candidateLimit }}"
@@ -55,4 +66,3 @@ jobs:
         with:
           name: nec-api-probe-reports
           path: data/probes
-

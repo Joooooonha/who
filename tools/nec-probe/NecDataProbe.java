@@ -53,6 +53,7 @@ public class NecDataProbe {
 
         NecOpenApiClient client = new NecOpenApiClient(config.serviceKey);
         List<ElectionCode> electionCodes = client.fetchElectionCodes();
+        writeElectionCodeReports(electionCodes, config.outputDir.resolve("common-codes"));
         List<TargetSpec> targets = TargetSpec.resolve(config);
 
         for (TargetSpec target : targets) {
@@ -79,6 +80,9 @@ public class NecDataProbe {
 
             List<Pledge> pledges = new ArrayList<>();
             for (Candidate candidate : candidates) {
+                if (candidate.candidateId.isBlank()) {
+                    continue;
+                }
                 List<Pledge> candidatePledges = client.fetchPledges(target.sgId, target.sgTypecode, candidate.candidateId);
                 for (Pledge pledge : candidatePledges) {
                     pledges.add(pledge.withCandidate(candidate));
@@ -114,6 +118,36 @@ public class NecDataProbe {
         Files.createDirectories(outputDir);
         Files.writeString(outputDir.resolve("validation-report.json"), report.toJson(), StandardCharsets.UTF_8);
         Files.writeString(outputDir.resolve("validation-report.md"), report.toMarkdown(), StandardCharsets.UTF_8);
+    }
+
+    private static void writeElectionCodeReports(List<ElectionCode> codes, Path outputDir) throws IOException {
+        Files.createDirectories(outputDir);
+
+        JsonWriter json = new JsonWriter();
+        json.beginArray();
+        for (ElectionCode code : codes) {
+            json.beginObject()
+                    .name("sgId").value(code.sgId)
+                    .name("sgTypecode").value(code.sgTypecode)
+                    .name("sgName").value(code.sgName)
+                    .name("sgVotedate").value(code.sgVotedate)
+                    .endObject();
+        }
+        json.endArray();
+        Files.writeString(outputDir.resolve("common-codes.json"), json.toString(), StandardCharsets.UTF_8);
+
+        StringBuilder md = new StringBuilder();
+        md.append("# NEC Common Election Codes\n\n");
+        md.append("| sgId | sgTypecode | sgName | sgVotedate |\n");
+        md.append("| --- | --- | --- | --- |\n");
+        for (ElectionCode code : codes) {
+            md.append("| ").append(escapeMarkdown(code.sgId))
+                    .append(" | ").append(escapeMarkdown(code.sgTypecode))
+                    .append(" | ").append(escapeMarkdown(code.sgName))
+                    .append(" | ").append(escapeMarkdown(code.sgVotedate))
+                    .append(" |\n");
+        }
+        Files.writeString(outputDir.resolve("common-codes.md"), md.toString(), StandardCharsets.UTF_8);
     }
 
     private static void printHelp() {
@@ -278,6 +312,11 @@ public class NecDataProbe {
 
                 XmlResponse response = get("/PofelcddInfoInqireService/getPofelcddRegistSttusInfoInqire", params);
                 total = response.totalCount;
+                if (response.isNoData()) {
+                    System.out.println("No candidate data for sgId=" + sgId + ", sgTypecode=" + sgTypecode
+                            + ", sdName=" + sdName + ", sggName=" + sggName);
+                    break;
+                }
                 for (Map<String, String> item : response.items) {
                     if (result.size() >= limit) {
                         break;
@@ -310,6 +349,9 @@ public class NecDataProbe {
             params.put("cnddtId", candidateId);
 
             XmlResponse response = get("/ElecPrmsInfoInqireService/getCnddtElecPrmsInfoInqire", params);
+            if (response.isNoData()) {
+                return List.of();
+            }
             List<Pledge> pledges = new ArrayList<>();
             for (Map<String, String> item : response.items) {
                 int pledgeCount = parseInt(firstNonBlank(item.get("prmsCnt"), "10"), 10);
@@ -379,6 +421,14 @@ public class NecDataProbe {
     }
 
     private record XmlResponse(String resultCode, String resultMessage, int totalCount, List<Map<String, String>> items) {
+        boolean isNoData() {
+            String normalizedCode = resultCode == null ? "" : resultCode.trim().toUpperCase(Locale.ROOT);
+            String normalizedMessage = resultMessage == null ? "" : resultMessage.trim();
+            return normalizedCode.equals("INFO-03")
+                    || normalizedCode.equals("03")
+                    || normalizedMessage.contains("데이터 정보가 없습니다");
+        }
+
         static XmlResponse parse(String xml, String path) throws IOException {
             try {
                 DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
@@ -395,10 +445,6 @@ public class NecDataProbe {
                 Document document = factory.newDocumentBuilder().parse(new InputSource(new StringReader(xml)));
                 String resultCode = firstNonBlank(text(document, "resultCode"), text(document, "returnReasonCode"));
                 String resultMessage = firstNonBlank(text(document, "resultMsg"), text(document, "returnAuthMsg"));
-                if (!resultCode.isBlank() && !isSuccess(resultCode)) {
-                    throw new IOException("API error from " + path + ": " + resultCode + " " + resultMessage);
-                }
-
                 int totalCount = parseInt(text(document, "totalCount"), 0);
                 List<Map<String, String>> items = new ArrayList<>();
                 NodeList itemNodes = document.getElementsByTagName("item");
@@ -411,7 +457,11 @@ public class NecDataProbe {
                 if (totalCount == 0 && !items.isEmpty()) {
                     totalCount = items.size();
                 }
-                return new XmlResponse(resultCode, resultMessage, totalCount, items);
+                XmlResponse response = new XmlResponse(resultCode, resultMessage, totalCount, items);
+                if (!resultCode.isBlank() && !isSuccess(resultCode) && !response.isNoData()) {
+                    throw new IOException("API error from " + path + ": " + resultCode + " " + resultMessage);
+                }
+                return response;
             } catch (IOException e) {
                 throw e;
             } catch (Exception e) {
@@ -563,7 +613,8 @@ public class NecDataProbe {
 
             md.append("## Candidate Ranking\n\n");
             if (ranking.isEmpty()) {
-                md.append("No ranking was calculated because no pledges were available.\n\n");
+                md.append("No ranking was calculated because no pledges were available. ")
+                        .append("Check `../common-codes/common-codes.md` and retry with an actual `sgId/sgTypecode` pair if this target is empty.\n\n");
             } else {
                 md.append("| Rank | Candidate | Region | Evaluated | Average | Match |\n");
                 md.append("| ---: | --- | --- | ---: | ---: | ---: |\n");
@@ -951,4 +1002,3 @@ public class NecDataProbe {
         return Objects.toString(value, "").replace("|", "\\|");
     }
 }
-

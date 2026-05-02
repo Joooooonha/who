@@ -35,6 +35,8 @@ DATA_GO_KR_SERVICE_KEY='발급받은_서비스키' \
 
 결과는 `data/probes/` 아래에 Markdown/JSON 리포트로 저장됩니다.
 
+실제 API 모드에서는 `data/probes/common-codes/`에 선거코드 목록도 함께 저장됩니다. 후보자 API에서 `INFO-03 데이터 정보가 없습니다`가 나오면 이 목록에서 실제로 제공되는 `sgId`와 `sgTypecode` 조합을 확인한 뒤 custom target으로 다시 실행하세요.
+
 ## API 신청과 배포
 
 - 필요한 공공데이터 API 신청 절차는 [docs/api-application.md](docs/api-application.md)에 정리했습니다.
