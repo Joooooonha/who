@@ -29,6 +29,7 @@ import org.xml.sax.InputSource;
 public class NecDataProbe {
     private static final String DEFAULT_OUTPUT_DIR = "data/probes";
     private static final int DEFAULT_CANDIDATE_LIMIT = 30;
+    private static final int AVAILABILITY_SAMPLE_LIMIT = 3;
     private static final int PAGE_SIZE = 100;
 
     public static void main(String[] args) throws Exception {
@@ -54,6 +55,13 @@ public class NecDataProbe {
         NecOpenApiClient client = new NecOpenApiClient(config.serviceKey);
         List<ElectionCode> electionCodes = client.fetchElectionCodes();
         writeElectionCodeReports(electionCodes, config.outputDir.resolve("common-codes"));
+        if (config.target.equalsIgnoreCase("pledge-availability")) {
+            List<PledgeAvailability> availability = scanPledgeAvailability(client, electionCodes, config);
+            writeAvailabilityReports(availability, config.outputDir.resolve("pledge-availability"));
+            System.out.println("Pledge availability report written to "
+                    + config.outputDir.resolve("pledge-availability").toAbsolutePath());
+            return;
+        }
         List<TargetSpec> targets = TargetSpec.resolve(config);
 
         for (TargetSpec target : targets) {
@@ -166,6 +174,102 @@ public class NecDataProbe {
         Files.writeString(outputDir.resolve("common-codes.md"), md.toString(), StandardCharsets.UTF_8);
     }
 
+    private static List<PledgeAvailability> scanPledgeAvailability(
+            NecOpenApiClient client,
+            List<ElectionCode> electionCodes,
+            Config config
+    ) throws IOException, InterruptedException {
+        List<PledgeAvailability> rows = new ArrayList<>();
+        int sampleLimit = Math.min(config.candidateLimit, AVAILABILITY_SAMPLE_LIMIT);
+        for (ElectionCode code : electionCodes) {
+            System.out.println("Scanning pledge availability sgId=" + code.sgId
+                    + " sgTypecode=" + code.sgTypecode + " " + code.sgName);
+            List<Candidate> candidates = client.fetchCandidates(
+                    code.sgId,
+                    code.sgTypecode,
+                    config.sdName,
+                    config.sggName,
+                    sampleLimit
+            );
+
+            int candidatesWithPledges = 0;
+            int pledgeCount = 0;
+            String firstCandidateId = "";
+            String firstCandidateName = "";
+            String firstPledgeTitle = "";
+
+            for (Candidate candidate : candidates) {
+                if (candidate.candidateId.isBlank()) {
+                    continue;
+                }
+                List<Pledge> pledges = client.fetchPledges(code.sgId, code.sgTypecode, candidate.candidateId);
+                if (!pledges.isEmpty()) {
+                    candidatesWithPledges++;
+                    pledgeCount += pledges.size();
+                    if (firstCandidateId.isBlank()) {
+                        firstCandidateId = candidate.candidateId;
+                        firstCandidateName = candidate.name;
+                        firstPledgeTitle = pledges.get(0).title;
+                    }
+                }
+            }
+
+            rows.add(new PledgeAvailability(
+                    code,
+                    candidates.size(),
+                    candidatesWithPledges,
+                    pledgeCount,
+                    firstCandidateId,
+                    firstCandidateName,
+                    firstPledgeTitle
+            ));
+        }
+        return rows;
+    }
+
+    private static void writeAvailabilityReports(List<PledgeAvailability> rows, Path outputDir) throws IOException {
+        Files.createDirectories(outputDir);
+
+        JsonWriter json = new JsonWriter();
+        json.beginArray();
+        for (PledgeAvailability row : rows) {
+            json.beginObject()
+                    .name("sgId").value(row.election.sgId)
+                    .name("sgTypecode").value(row.election.sgTypecode)
+                    .name("sgName").value(row.election.sgName)
+                    .name("sgVotedate").value(row.election.sgVotedate)
+                    .name("sampledCandidates").value(row.sampledCandidates)
+                    .name("candidatesWithPledges").value(row.candidatesWithPledges)
+                    .name("sampledPledges").value(row.sampledPledges)
+                    .name("firstCandidateId").value(row.firstCandidateId)
+                    .name("firstCandidateName").value(row.firstCandidateName)
+                    .name("firstPledgeTitle").value(row.firstPledgeTitle)
+                    .endObject();
+        }
+        json.endArray();
+        Files.writeString(outputDir.resolve("pledge-availability.json"), json.toString(), StandardCharsets.UTF_8);
+
+        StringBuilder md = new StringBuilder();
+        md.append("# NEC Pledge Availability\n\n");
+        md.append("This report samples up to `").append(AVAILABILITY_SAMPLE_LIMIT)
+                .append("` candidates for each `sgId/sgTypecode` pair to identify where pledge data exists.\n\n");
+        md.append("| sgId | sgTypecode | sgName | Date | Candidates | With pledges | Pledges | First candidate | First pledge |\n");
+        md.append("| --- | --- | --- | --- | ---: | ---: | ---: | --- | --- |\n");
+        for (PledgeAvailability row : rows) {
+            md.append("| ").append(escapeMarkdown(row.election.sgId))
+                    .append(" | ").append(escapeMarkdown(row.election.sgTypecode))
+                    .append(" | ").append(escapeMarkdown(row.election.sgName))
+                    .append(" | ").append(escapeMarkdown(row.election.sgVotedate))
+                    .append(" | ").append(row.sampledCandidates)
+                    .append(" | ").append(row.candidatesWithPledges)
+                    .append(" | ").append(row.sampledPledges)
+                    .append(" | ").append(escapeMarkdown(firstNonBlank(row.firstCandidateName, row.firstCandidateId)))
+                    .append(" | ").append(escapeMarkdown(row.firstPledgeTitle))
+                    .append(" |\n");
+        }
+        Files.writeString(outputDir.resolve("pledge-availability.md"), md.toString(), StandardCharsets.UTF_8);
+    }
+
     private static void printHelp() {
         System.out.println("""
                 NEC data probe
@@ -176,10 +280,10 @@ public class NecDataProbe {
 
                 Options:
                   --fixture                 Run with embedded sample data.
-                  --target VALUE            2022-local, 2025-president, docs-sample, all, or custom.
+                  --target VALUE            2022-local, 2025-president, docs-sample, pledge-availability, all, or custom.
                   --sgId VALUE              Required for --target custom.
                   --sgTypecode VALUE        Required for --target custom.
-                  --candidate-id VALUE      Optional direct cnddtid/huboid pledge probe.
+                  --candidate-id VALUE      Optional direct cnddtId/huboid pledge probe.
                   --sdName VALUE            Optional city/province filter.
                   --sggName VALUE           Optional election district filter.
                   --candidate-limit N       Candidate sample size. Default: 30.
@@ -264,6 +368,7 @@ public class NecDataProbe {
                 case "docs-sample" -> List.of(
                         new TargetSpec("docs-sample", "20231011", "4", "API documentation sample")
                 );
+                case "pledge-availability" -> List.of();
                 case "all" -> {
                     List<TargetSpec> all = new ArrayList<>();
                     all.addAll(resolve(new Config(config.serviceKey, "2022-local", "", "", config.sdName, config.sggName, config.candidateId,
@@ -370,7 +475,7 @@ public class NecDataProbe {
             params.put("numOfRows", "10");
             params.put("sgId", sgId);
             params.put("sgTypecode", sgTypecode);
-            params.put("cnddtid", candidateId);
+            params.put("cnddtId", candidateId);
 
             XmlResponse response = get("/ElecPrmsInfoInqireService/getCnddtElecPrmsInfoInqire", params);
             if (response.isNoData()) {
@@ -389,14 +494,14 @@ public class NecDataProbe {
                             id,
                             item.getOrDefault("sgId", sgId),
                             item.getOrDefault("sgTypecode", sgTypecode),
-                            firstNonBlank(item.get("cnddtid"), item.get("cnddtId"), candidateId),
+                            firstNonBlank(item.get("cnddtId"), item.get("cnddtid"), candidateId),
                             item.getOrDefault("krName", ""),
                             item.getOrDefault("partyName", ""),
                             item.getOrDefault("sidoName", ""),
                             item.getOrDefault("sggName", ""),
                             item.getOrDefault("prmsRealmName" + order, ""),
                             title,
-                            item.getOrDefault("prmsCont" + order, ""),
+                            firstNonBlank(item.get("prmmCont" + order), item.get("prmsCont" + order)),
                             order
                     ));
                 }
@@ -583,6 +688,17 @@ public class NecDataProbe {
             int totalScore,
             double averageScore,
             double normalizedScore
+    ) {
+    }
+
+    private record PledgeAvailability(
+            ElectionCode election,
+            int sampledCandidates,
+            int candidatesWithPledges,
+            int sampledPledges,
+            String firstCandidateId,
+            String firstCandidateName,
+            String firstPledgeTitle
     ) {
     }
 

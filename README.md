@@ -47,6 +47,15 @@ DATA_GO_KR_SERVICE_KEY='발급받은_서비스키' \
   java tools/nec-probe/NecDataProbe.java --target docs-sample --candidate-id 1000000000
 ```
 
+모든 선거코드 조합에서 공약 데이터가 붙는지 샘플 확인:
+
+```sh
+DATA_GO_KR_SERVICE_KEY='발급받은_서비스키' \
+  java tools/nec-probe/NecDataProbe.java --target pledge-availability
+```
+
+이 모드는 API 쿼터를 아끼기 위해 각 `sgId/sgTypecode` 조합에서 후보자 최대 3명만 샘플링합니다.
+
 결과는 `data/probes/` 아래에 Markdown/JSON 리포트로 저장됩니다.
 
 실제 API 모드에서는 `data/probes/common-codes/`에 선거코드 목록도 함께 저장됩니다. 후보자 API에서 `INFO-03 데이터 정보가 없습니다`가 나오면 이 목록에서 실제로 제공되는 `sgId`와 `sgTypecode` 조합을 확인한 뒤 custom target으로 다시 실행하세요.

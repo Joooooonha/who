@@ -12,6 +12,7 @@ on:
           - 2022-local
           - 2025-president
           - docs-sample
+          - pledge-availability
           - all
           - custom
       sgId:
@@ -23,7 +24,7 @@ on:
         required: false
         default: ""
       candidateId:
-        description: "cnddtid/huboid - optional direct pledge probe"
+        description: "cnddtId/huboid - optional direct pledge probe"
         required: false
         default: ""
       sdName:

@@ -16,7 +16,7 @@
    - 목적: 후보자ID 기준 후보자별 공약 조회
    - 서비스: `ElecPrmsInfoInqireService`
    - 개발계정: 자동승인, 기본 10,000건 트래픽
-   - 후보자 정보 API의 `huboid` 값을 공약 API의 `cnddtid` 파라미터에 넣는다.
+   - 후보자 정보 API의 `huboid` 값을 공약 API의 `cnddtId` 파라미터에 넣는다.
 
 ## 신청 사유 예시
 
@@ -59,6 +59,12 @@ java tools/nec-probe/NecDataProbe.java --target 2025-president
 
 ```sh
 java tools/nec-probe/NecDataProbe.java --target docs-sample --candidate-id 1000000000
+```
+
+모든 선거코드 조합에서 공약 데이터가 존재하는지 1차로 훑을 때:
+
+```sh
+java tools/nec-probe/NecDataProbe.java --target pledge-availability
 ```
 
 ## GitHub Secrets
