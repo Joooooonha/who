@@ -15,19 +15,19 @@ on:
           - all
           - custom
       sgId:
-        description: Required only when target is custom
+        description: "sgId - required only when target is custom"
         required: false
         default: ""
       sgTypecode:
-        description: Required only when target is custom
+        description: "sgTypecode - required only when target is custom"
         required: false
         default: ""
       sdName:
-        description: Optional city/province filter
+        description: "sdName - optional city/province filter"
         required: false
         default: ""
       sggName:
-        description: Optional district filter
+        description: "sggName - optional district filter"
         required: false
         default: ""
       candidateLimit:
