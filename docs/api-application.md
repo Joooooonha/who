@@ -55,6 +55,12 @@ java tools/nec-probe/NecDataProbe.java --target 2025-president
 
 후보자 API에서 `INFO-03 데이터 정보가 없습니다`가 나오면 실패라기보다 해당 `sgId/sgTypecode` 조합에 후보자 데이터가 없다는 뜻일 수 있다. 이때는 `data/probes/common-codes/common-codes.md`에서 실제 제공 중인 선거코드를 확인한 뒤 custom target으로 다시 검증한다.
 
+후보자 목록 조회와 공약 조회 중 어느 단계가 문제인지 분리하려면 문서 예시 후보자 ID로 공약 API만 직접 검증한다.
+
+```sh
+java tools/nec-probe/NecDataProbe.java --target docs-sample --candidate-id 1000000000
+```
+
 ## GitHub Secrets
 
 CI/CD에서 실데이터 검증이나 배포를 연결할 때 아래 secrets를 설정한다.

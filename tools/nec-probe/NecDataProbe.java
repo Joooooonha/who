@@ -70,13 +70,29 @@ public class NecDataProbe {
 
             System.out.println("Fetching candidates: " + target.slug + " sgId=" + target.sgId
                     + " sgTypecode=" + target.sgTypecode);
-            List<Candidate> candidates = client.fetchCandidates(
-                    target.sgId,
-                    target.sgTypecode,
-                    config.sdName,
-                    config.sggName,
-                    config.candidateLimit
-            );
+            List<Candidate> candidates;
+            if (config.candidateId.isBlank()) {
+                candidates = client.fetchCandidates(
+                        target.sgId,
+                        target.sgTypecode,
+                        config.sdName,
+                        config.sggName,
+                        config.candidateLimit
+                );
+            } else {
+                System.out.println("Using direct candidate id: " + config.candidateId);
+                candidates = List.of(new Candidate(
+                        target.sgId,
+                        target.sgTypecode,
+                        config.candidateId,
+                        config.sdName,
+                        config.sggName,
+                        "",
+                        "",
+                        "Direct candidate " + config.candidateId,
+                        ""
+                ));
+            }
 
             List<Pledge> pledges = new ArrayList<>();
             for (Candidate candidate : candidates) {
@@ -163,6 +179,7 @@ public class NecDataProbe {
                   --target VALUE            2022-local, 2025-president, docs-sample, all, or custom.
                   --sgId VALUE              Required for --target custom.
                   --sgTypecode VALUE        Required for --target custom.
+                  --candidate-id VALUE      Optional direct cnddtid/huboid pledge probe.
                   --sdName VALUE            Optional city/province filter.
                   --sggName VALUE           Optional election district filter.
                   --candidate-limit N       Candidate sample size. Default: 30.
@@ -179,6 +196,7 @@ public class NecDataProbe {
             String customSgTypecode,
             String sdName,
             String sggName,
+            String candidateId,
             int candidateLimit,
             Path outputDir,
             boolean fixtureMode,
@@ -195,7 +213,7 @@ public class NecDataProbe {
                     case "--fixture" -> fixture = true;
                     case "--help", "-h" -> help = true;
                     case "--target", "--sgId", "--sgTypecode", "--sdName", "--sggName",
-                            "--candidate-limit", "--output", "--service-key" -> {
+                            "--candidate-id", "--candidate-limit", "--output", "--service-key" -> {
                         if (i + 1 >= args.length) {
                             throw new IllegalArgumentException(arg + " requires a value");
                         }
@@ -211,10 +229,11 @@ public class NecDataProbe {
             String customSgTypecode = firstNonBlank(values.get("--sgTypecode"), "");
             String sdName = firstNonBlank(values.get("--sdName"), "");
             String sggName = firstNonBlank(values.get("--sggName"), "");
+            String candidateId = firstNonBlank(values.get("--candidate-id"), "");
             int candidateLimit = parsePositiveInt(values.get("--candidate-limit"), DEFAULT_CANDIDATE_LIMIT);
             Path outputDir = Path.of(firstNonBlank(values.get("--output"), DEFAULT_OUTPUT_DIR));
 
-            return new Config(serviceKey, target, customSgId, customSgTypecode, sdName, sggName,
+            return new Config(serviceKey, target, customSgId, customSgTypecode, sdName, sggName, candidateId,
                     candidateLimit, outputDir, fixture, help);
         }
 
@@ -247,11 +266,11 @@ public class NecDataProbe {
                 );
                 case "all" -> {
                     List<TargetSpec> all = new ArrayList<>();
-                    all.addAll(resolve(new Config(config.serviceKey, "2022-local", "", "", config.sdName, config.sggName,
+                    all.addAll(resolve(new Config(config.serviceKey, "2022-local", "", "", config.sdName, config.sggName, config.candidateId,
                             config.candidateLimit, config.outputDir, false, false)));
-                    all.addAll(resolve(new Config(config.serviceKey, "2025-president", "", "", config.sdName, config.sggName,
+                    all.addAll(resolve(new Config(config.serviceKey, "2025-president", "", "", config.sdName, config.sggName, config.candidateId,
                             config.candidateLimit, config.outputDir, false, false)));
-                    all.addAll(resolve(new Config(config.serviceKey, "docs-sample", "", "", config.sdName, config.sggName,
+                    all.addAll(resolve(new Config(config.serviceKey, "docs-sample", "", "", config.sdName, config.sggName, config.candidateId,
                             config.candidateLimit, config.outputDir, false, false)));
                     yield all;
                 }

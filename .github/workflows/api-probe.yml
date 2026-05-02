@@ -22,6 +22,10 @@ on:
         description: "sgTypecode - required only when target is custom"
         required: false
         default: ""
+      candidateId:
+        description: "cnddtid/huboid - optional direct pledge probe"
+        required: false
+        default: ""
       sdName:
         description: "sdName - optional city/province filter"
         required: false
@@ -60,6 +64,7 @@ jobs:
             --target "${{ inputs.target }}" \
             --sgId "${{ inputs.sgId }}" \
             --sgTypecode "${{ inputs.sgTypecode }}" \
+            --candidate-id "${{ inputs.candidateId }}" \
             --sdName "${{ inputs.sdName }}" \
             --sggName "${{ inputs.sggName }}" \
             --candidate-limit "${{ inputs.candidateLimit }}"
