@@ -111,6 +111,23 @@ curl -X POST "http://localhost:8080/api/admin/import/nec?sgId=20250603&sgTypecod
 
 2026 지방선거 데이터가 공개되면 같은 API에 `sgId=20260603`과 `sgTypecode=3`, `4`, `11`을 넣어 재실행합니다.
 
+## Frontend
+
+프론트엔드는 `frontend/`의 Vite React 앱입니다. 로컬 개발에서는 Vite proxy가 `localhost:8080` 백엔드로 `/api` 요청을 전달합니다.
+
+```sh
+cd frontend
+npm install
+npm run dev
+```
+
+프로덕션 빌드 확인:
+
+```sh
+cd frontend
+npm run build
+```
+
 ## Data Flow
 
 ```text
