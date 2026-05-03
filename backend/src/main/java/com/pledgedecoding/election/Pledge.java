@@ -65,6 +65,22 @@ public class Pledge {
 		this.category = category;
 		this.title = title;
 		this.rawContent = rawContent;
+		this.sourceHash = SourceHash.sha256(title + "\n" + rawContent);
+	}
+
+	public void updateOfficialContent(String category, String title, String rawContent) {
+		String newSourceHash = SourceHash.sha256(title + "\n" + rawContent);
+		boolean contentChanged = this.sourceHash == null || !this.sourceHash.equals(newSourceHash);
+		this.category = category;
+		this.title = title;
+		this.rawContent = rawContent;
+		this.sourceHash = newSourceHash;
+		if (contentChanged) {
+			this.summary = null;
+			this.summaryStatus = SummaryStatus.PENDING;
+			this.summaryModel = null;
+			this.summaryGeneratedAt = null;
+		}
 	}
 
 	public Long getId() {
@@ -111,4 +127,3 @@ public class Pledge {
 		return sourceHash;
 	}
 }
-

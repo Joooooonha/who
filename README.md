@@ -92,8 +92,24 @@ DATABASE_PASSWORD
 GET /api/elections
 GET /api/elections/{electionId}/pledges
 POST /api/results
+POST /api/admin/import/nec
 GET /actuator/health
 ```
+
+NEC 데이터 import:
+
+```sh
+cd backend
+DATA_GO_KR_SERVICE_KEY='발급받은_서비스키' ./gradlew bootRun
+```
+
+다른 터미널에서:
+
+```sh
+curl -X POST "http://localhost:8080/api/admin/import/nec?sgId=20250603&sgTypecode=1&candidateLimit=10"
+```
+
+2026 지방선거 데이터가 공개되면 같은 API에 `sgId=20260603`과 `sgTypecode=3`, `4`, `11`을 넣어 재실행합니다.
 
 ## Data Flow
 

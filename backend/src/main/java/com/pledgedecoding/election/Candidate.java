@@ -60,6 +60,15 @@ public class Candidate {
 		this.status = status;
 	}
 
+	public void updateDetails(String name, String partyName, String sdName, String sggName, String wiwName, String status) {
+		this.name = name;
+		this.partyName = partyName;
+		this.sdName = sdName;
+		this.sggName = sggName;
+		this.wiwName = wiwName;
+		this.status = status;
+	}
+
 	public Long getId() {
 		return id;
 	}
@@ -96,4 +105,3 @@ public class Candidate {
 		return status;
 	}
 }
-

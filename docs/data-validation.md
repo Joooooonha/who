@@ -120,3 +120,26 @@ DATA_GO_KR_SERVICE_KEY='발급받은_서비스키' \
 - 예산/재원 정보는 공식 공약 API 기본 필드가 아니므로 MVP에서는 표시하지 않는다.
 - 후보 사진은 공식 API에서 안정적으로 제공되지 않으므로 MVP에서는 이름/지역 중심으로 표시한다.
 - 2026 데이터가 공개되면 동일 파이프라인에서 `sgId`, `sgTypecode`만 바꿔 재검증한다.
+
+## Backend Import
+
+Spring Boot 백엔드에서 실데이터를 DB에 적재할 때는 다음 흐름을 사용한다.
+
+```text
+POST /api/admin/import/nec?sgId=20250603&sgTypecode=1&candidateLimit=10
+```
+
+요청 파라미터:
+
+- `sgId`: 선거ID
+- `sgTypecode`: 선거종류코드
+- `candidateLimit`: 후보자 최대 import 수. `0`이면 제한 없이 조회한다.
+- `sdName`: 선택 시도명 필터
+- `sggName`: 선택 선거구명 필터
+
+현재 확인된 공약 제공 가능성이 높은 선거종류:
+
+- `1`: 대통령선거
+- `3`: 시·도지사선거
+- `4`: 구·시·군의 장선거
+- `11`: 교육감선거

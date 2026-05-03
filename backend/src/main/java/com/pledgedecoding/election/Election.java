@@ -40,6 +40,11 @@ public class Election {
 		this.votedate = votedate;
 	}
 
+	public void updateDetails(String name, LocalDate votedate) {
+		this.name = name;
+		this.votedate = votedate;
+	}
+
 	public Long getId() {
 		return id;
 	}
@@ -60,4 +65,3 @@ public class Election {
 		return votedate;
 	}
 }
-
