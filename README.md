@@ -64,9 +64,36 @@ DATA_GO_KR_SERVICE_KEY='발급받은_서비스키' \
 
 - 필요한 공공데이터 API 신청 절차는 [docs/api-application.md](docs/api-application.md)에 정리했습니다.
 - 기능을 작게 만든 뒤 계속 배포하는 CI/CD 방향은 [docs/deployment.md](docs/deployment.md)에 정리했습니다.
-- 현재 CI는 fixture probe를 실행하고 JSON 리포트를 검증합니다.
+- 현재 CI는 fixture probe, JSON 리포트 검증, backend test를 실행합니다.
 - API 키를 GitHub secret `DATA_GO_KR_SERVICE_KEY`로 넣으면 수동 workflow에서 실데이터 probe를 돌릴 수 있습니다.
 - 배포 플랫폼의 deploy hook을 GitHub secret `DEPLOY_HOOK_URL`로 넣으면 `main` CI 성공 후 자동 배포됩니다.
+
+## Backend
+
+Spring Boot 백엔드는 `backend/`에 있습니다.
+
+```sh
+cd backend
+./gradlew test
+./gradlew bootRun
+```
+
+기본 로컬 프로필은 H2 in-memory DB를 사용합니다. 배포에서는 `SPRING_PROFILES_ACTIVE=prod`와 아래 환경변수를 설정합니다.
+
+```text
+DATABASE_URL
+DATABASE_USERNAME
+DATABASE_PASSWORD
+```
+
+초기 API:
+
+```text
+GET /api/elections
+GET /api/elections/{electionId}/pledges
+POST /api/results
+GET /actuator/health
+```
 
 ## Data Flow
 

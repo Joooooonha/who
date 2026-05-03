@@ -26,3 +26,6 @@ jobs:
       - name: Validate JSON report
         run: python -m json.tool data/probes/fixture/validation-report.json >/dev/null
 
+      - name: Run backend tests
+        working-directory: backend
+        run: ./gradlew test
